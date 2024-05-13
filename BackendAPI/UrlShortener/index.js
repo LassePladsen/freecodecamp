@@ -36,10 +36,12 @@ app.get("/api/hello", function (req, res) {
   res.json({ greeting: "hello API" });
 });
 
-// Url endpoint form
+// Url form post endpoint
 app.post("/api/shorturl", function (req, res) {
   const url = req.body.url;
-  dns.lookup(url, function (err, address, family) {
+  const urlStripped = url.replace(/^(https?)?:\/\//i, ""); // remote protocol
+
+  dns.lookup(urlStripped, function (err, address, family) {
     // Not found
     if (err) return res.json({ error: "Invalid URL" });
 
@@ -55,7 +57,7 @@ app.post("/api/shorturl", function (req, res) {
         });
       }
 
-      // Else add to DB
+      // Not in DB: add to DB
       createNewURL(res, url);
     });
   });
@@ -67,7 +69,7 @@ function createNewURL(res, url) {
     if (err) return console.log(err);
 
     let integer = 0; // default integer if no urls already exists
-    if (data) {
+    if (data.length > 0) {
       integer = data[data.length - 1].short_url + 1; // add one to last used integer
     }
 
@@ -79,6 +81,25 @@ function createNewURL(res, url) {
     });
   });
 }
+
+// Url get endpoint
+app.get("/api/shorturl/:short_url", function (req, res) {
+  // Check DB
+  URL.findOne({ short_url: req.params.short_url }, function (err, data) {
+    if (err) return console.log(err);
+
+    // If in DB: return json
+    if (data) {
+      return res.json({
+        original_url: data.original_url,
+        short_url: data.short_url,
+      });
+    }
+
+    // Not in DB: return error
+    return res.json({ error: "No short URL found for the given input" });
+  });
+});
 
 app.listen(port, function () {
   console.log(`Listening on port ${port}`);

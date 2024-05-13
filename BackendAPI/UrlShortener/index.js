@@ -5,7 +5,6 @@ const app = express();
 const bodyParser = require("body-parser");
 const dns = require("node:dns");
 const mongoose = require("mongoose");
-const { escape } = require("node:querystring");
 
 // Basic Configuration
 const port = process.env.PORT || 3000;
@@ -96,7 +95,7 @@ app.get("/api/shorturl/:short_url", function (req, res) {
       });
     }
 
-    // Not in DB: return error
+    // Not in DB: return error msg
     return res.json({ error: "No short URL found for the given input" });
   });
 });

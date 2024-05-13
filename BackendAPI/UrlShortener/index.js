@@ -12,7 +12,6 @@ const port = process.env.PORT || 3000;
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  
 });
 
 // Mongoose model
@@ -57,14 +56,29 @@ app.post("/api/shorturl", function (req, res) {
       }
 
       // Else add to DB
-      new URL({original_url: url, short_url: 1}).save(function (err, data) {
-        if (err) return console.log(err);
-      });
+      createNewURL(res, url);
     });
-
-    return;
   });
 });
+
+function createNewURL(res, url) {
+  // First find next available integer
+  URL.find({}, function (err, data) {
+    if (err) return console.log(err);
+
+    let integer = 0; // default integer if no urls already exists
+    if (data) {
+      integer = data[data.length - 1].short_url + 1; // add one to last used integer
+    }
+
+    // Finally add to DB
+    const json = { original_url: url, short_url: integer };
+    new URL(json).save(function (err, data) {
+      if (err) return console.log(err);
+      return res.json(json);
+    });
+  });
+}
 
 app.listen(port, function () {
   console.log(`Listening on port ${port}`);
